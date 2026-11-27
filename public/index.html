@@ -11,8 +11,8 @@
 <script>
 /* Defaults. Railway env variables override these via /config.js */
 window.LP = {
-  brand: "Suerte Guru",
-  channelUrl: "https://t.me/YOUR_CHANNEL",
+  brand: "Apuestas Guru",
+  channelUrl: "https://www.whatsapp.com/channel/0029Vb9GxE15kg77ou8Id524",
   pixelId: "",
   webhookUrl: "/api/lead",
   countryPrefix: "+34",
@@ -20,7 +20,24 @@ window.LP = {
   phonePlaceholder: "612 345 678",
   // Wheel segments, clockwise from the top. Use only prizes the channel really delivers.
   segments: ["50 giros", "Pronóstico VIP", "Bono 100\u00a0%", "20 giros", "Bono 200\u00a0%", "Pronóstico del día", "100 giros", "Bono 150\u00a0%"],
-  winIndex: 4
+  winIndex: 4,
+  // The local character. {prize} and {brand} are replaced automatically.
+  guruName: "Paco, el Guru",
+  guruLines: {
+    intro: "Vale, lo sé: un anuncio, una ruleta y un tío dibujado. Yo también habría hecho scroll. Pero ya que estás aquí, gira.",
+    spinning: "Redoble de tambores… que no suenan, porque soy un dibujo.",
+    impatient: [
+      "Ya está girando, que esto no es un cajero.",
+      "Que sí, que ya va. Qué prisa.",
+      "Pulsa lo que quieras: la ruleta no cambia de opinión."
+    ],
+    won: "Premio en el bolsillo. Baja y rellena lo del WhatsApp.",
+    claim: "Sí, la ruleta siempre cae aquí. Lo digo yo antes de que lo diga un cuñado en los comentarios. Ahora lo aburrido: tu WhatsApp.",
+    done: "Hecho. Último paso: entra al canal de WhatsApp para activar el premio. Si no, todo este teatro habrá sido para nada y yo me quedo sin curro.",
+    back: "Ya habías pasado por aquí: el navegador se acuerda, yo no, que soy un dibujo. Tu premio sigue reservado, entra al canal.",
+    badPhone: "Ese número no cuela: 9 cifras, empezando por 6 o 7.",
+    noConsent: "Marca la casilla, que es obligatoria. No es cosa mía, es la ley."
+  }
 };
 </script>
 <script src="/config.js"></script>
@@ -77,8 +94,8 @@ h1{font-size:clamp(2rem,8vw,2.6rem); line-height:1.02; font-weight:800; letter-s
 .btn:active{transform:translateY(4px); box-shadow:0 1px 0 #A52A1D}
 .btn:disabled{opacity:.6; cursor:default}
 .btn:focus-visible,input:focus-visible{outline:3px solid var(--saffron); outline-offset:3px}
-.btn.tg{background:#229ED9; box-shadow:0 5px 0 #17739F}
-.btn.tg:active{box-shadow:0 1px 0 #17739F}
+.btn.wa{background:#128C4A; box-shadow:0 5px 0 #0B6234}
+.btn.wa:active{box-shadow:0 1px 0 #0B6234}
 
 /* Sheet */
 .sheet{display:none; text-align:left; background:var(--surface); border:2px solid var(--line);
@@ -112,17 +129,55 @@ footer{max-width:460px; margin:0 auto; padding:0 20px 28px; text-align:center; f
 footer a{color:inherit}
 .age{display:inline-block; border:2px solid currentColor; border-radius:50%; width:30px; height:30px; line-height:26px; font-weight:800; margin-bottom:6px}
 
+/* Character */
+.guru{display:flex; gap:12px; align-items:flex-start; text-align:left; margin:0 0 18px}
+.guru > svg{flex:none; width:58px; height:58px; margin-top:2px}
+.bubble{--bb:var(--surface); position:relative; flex:1; min-width:0; background:var(--bb); border:2px solid var(--line);
+  border-radius:6px 16px 16px 16px; padding:9px 12px 10px; font-size:.97rem; line-height:1.36; color:var(--ink)}
+.bubble::before,.bubble::after{content:""; position:absolute; top:12px; border-style:solid; border-width:8px 9px 8px 0; border-color:transparent}
+.bubble::before{left:-10px; border-right-color:var(--line)}
+.bubble::after{left:-7px; border-right-color:var(--bb)}
+.bubble .who{display:block; font-size:.78rem; font-weight:800; color:var(--tomato); margin-bottom:1px}
+.sheet .bubble{--bb:var(--bg)}
+.sheet .guru{margin:6px 0 16px}
+.bubble .msg{display:block}
+.bubble.swap .msg{animation:swap .28s ease-out}
+@keyframes swap{from{opacity:0; transform:translateY(3px)}to{opacity:1; transform:none}}
+@media (max-width:360px){
+  .guru{gap:9px}
+  .guru > svg{width:44px; height:44px}
+  .bubble{font-size:.92rem; padding:8px 10px 9px}
+  .bubble::before,.bubble::after{top:9px}
+}
 @media (max-height:700px){
   main{padding-top:14px}
   .brand{margin-bottom:8px}
   h1{font-size:clamp(1.7rem,7.5vw,2.2rem)}
   .lead{font-size:.95rem; margin-bottom:10px}
+  .guru{margin-bottom:10px}
+  .wheel-wrap{width:min(88vw,292px); margin-bottom:18px}
+}
+@media (max-height:600px) and (orientation:portrait){
+  .brand{display:none}
+  main{padding-top:12px}
+  h1{font-size:1.6rem; margin-bottom:8px}
+  .wheel-wrap{width:min(80vw,236px); margin-bottom:16px}
+  .btn{padding:14px 20px}
 }
 @media (orientation:landscape) and (max-height:520px){
   main{max-width:820px; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:32px; align-items:center; text-align:left}
   main > *{grid-column:1}
   .wheel-wrap{grid-column:2; grid-row:1 / span 6; width:min(360px,calc(100vh - 70px)); width:min(360px,calc(100svh - 70px)); margin:24px 10px}
   .lead{margin-left:0}
+  .brand{display:none}
+  h1{font-size:1.55rem; margin-bottom:8px}
+  .guru{margin-bottom:12px}
+  .guru > svg{width:46px; height:46px}
+  .bubble{font-size:.86rem; padding:7px 10px 8px}
+  .sheet{padding:14px}
+  .done .check{display:none}
+  .prize{font-size:1.5rem}
+  .sheet .small{margin-top:10px}
 }
 @media (max-width:360px){
   main{padding-left:14px; padding-right:14px}
@@ -135,7 +190,7 @@ footer a{color:inherit}
 }
 @media (prefers-reduced-motion:reduce){
   #wheel{transition-duration:1.2s}
-  .sheet.show{animation:none}
+  .sheet.show,.bubble.swap .msg{animation:none}
 }
 </style>
 
@@ -156,7 +211,10 @@ if (window.LP.pixelId) {
 <main>
   <p class="brand" id="brandName"></p>
   <h1>Gira la ruleta y llévate tu premio</h1>
-  <p class="lead">Un giro gratis por persona. Te enviamos el premio por WhatsApp y lo activas en nuestro canal de Telegram.</p>
+  <div class="guru" id="guruTop" aria-live="polite">
+    <span data-face="smirk"></span>
+    <div class="bubble"><span class="who" data-name></span><span class="msg" id="topMsg"></span></div>
+  </div>
 
   <div class="wheel-wrap" aria-hidden="true">
     <svg class="pointer" viewBox="0 0 38 48"><path d="M19 48 2 12A17 17 0 1 1 36 12Z" fill="#E0412F" stroke="#16213E" stroke-width="3"/><circle cx="19" cy="15" r="6" fill="#FFF6E8"/></svg>
@@ -170,7 +228,10 @@ if (window.LP.pixelId) {
   <section class="sheet" id="claim" aria-live="polite">
     <span>¡Has ganado!</span>
     <strong class="prize" id="prizeText"></strong>
-    <p>Escribe tu número de WhatsApp para reservar el premio. Después te llevamos al canal de Telegram para activarlo.</p>
+    <div class="guru">
+      <span data-face="wow"></span>
+      <div class="bubble"><span class="who" data-name></span><span class="msg" id="claimMsg"></span></div>
+    </div>
 
     <label class="field" for="phone">Tu número de WhatsApp</label>
     <div class="phone" id="phoneBox">
@@ -188,19 +249,22 @@ if (window.LP.pixelId) {
     <button class="btn" id="claimBtn" type="button">Reservar mi premio</button>
   </section>
 
-  <!-- Step 3: go to Telegram -->
+  <!-- Step 3: go to the WhatsApp channel -->
   <section class="sheet done" id="done" aria-live="polite">
     <div class="check" aria-hidden="true">✓</div>
     <strong class="prize" id="prizeText2"></strong>
-    <p>Premio reservado. Únete al canal de Telegram para activarlo y recibir los pronósticos diarios.</p>
-    <button class="btn tg" id="tgBtn" type="button">Abrir el canal de Telegram</button>
-    <p class="small">Si no se abre, busca <span id="brandName2"></span> en Telegram.</p>
+    <div class="guru">
+      <span data-face="wink"></span>
+      <div class="bubble"><span class="who" data-name></span><span class="msg" id="doneMsg"></span></div>
+    </div>
+    <button class="btn wa" id="channelBtn" type="button">Abrir el canal de WhatsApp</button>
+    <p class="small">Si no se abre, busca <span id="brandName2"></span> en WhatsApp.</p>
   </section>
 </main>
 
 <footer>
   <div class="age">18+</div><br>
-  Juega con responsabilidad. Más información en <a href="https://www.jugarbien.es" target="_blank" rel="noopener">jugarbien.es</a>.
+  Sí, esto es publicidad. Los pronósticos no garantizan resultados. Solo para mayores de 18 años. Juega con responsabilidad. Más información en <a href="https://www.jugarbien.es" target="_blank" rel="noopener">jugarbien.es</a>.
 </footer>
 
 <script>
@@ -211,6 +275,42 @@ if (window.LP.pixelId) {
   const seg = 360 / C.segments.length;
   const colors = ["#E0412F","#16213E","#F2A71B","#16213E"];
   const textColors = ["#FFFFFF","#FFF3E0","#16213E","#FFF3E0"];
+
+  /* ---- the character: drawn in SVG, three moods ---- */
+  const guruSVG = mood => {
+    const eyeR = mood === "wink"
+      ? '<path d="M43 36.5Q47 33 51 36.5" fill="none" stroke="#2B1B17" stroke-width="2.4" stroke-linecap="round"/>'
+      : '<ellipse cx="47" cy="36" rx="4.2" ry="4.6" fill="#fff"/><circle cx="47" cy="36.6" r="2.1" fill="#16213E"/>';
+    const mouth = mood === "wow"
+      ? '<ellipse cx="40" cy="55" rx="3.2" ry="3.6" fill="#7A2E22"/>'
+      : '<path d="M34.5 53.5Q41 57 47 52.5" fill="none" stroke="#7A2E22" stroke-width="2.2" stroke-linecap="round"/>';
+    const brows = mood === "wow"
+      ? '<path d="M28.5 28.5Q33 25 37.5 28" fill="none" stroke="#2B1B17" stroke-width="3" stroke-linecap="round"/><path d="M42.5 28Q47 25 51.5 28.5" fill="none" stroke="#2B1B17" stroke-width="3" stroke-linecap="round"/>'
+      : '<path d="M28.5 31Q33 28.5 37.5 30.5" fill="none" stroke="#2B1B17" stroke-width="3" stroke-linecap="round"/><path d="M42.5 29Q47.5 24.5 52 28" fill="none" stroke="#2B1B17" stroke-width="3" stroke-linecap="round"/>';
+    return '<svg viewBox="0 0 80 80" aria-hidden="true" focusable="false">'
+      + '<circle cx="40" cy="40" r="38" fill="#F2A71B"/>'
+      + '<path d="M5.5 56H74.5A38 38 0 0 1 5.5 56Z" fill="#E0412F"/><path d="M13 65.5H67" stroke="#F2A71B" stroke-width="3.2" stroke-linecap="round"/><path d="M20 72H60" stroke="#FFF6E8" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<circle cx="22.5" cy="40" r="3.6" fill="#EDB48C" stroke="#16213E" stroke-width="2"/><circle cx="57.5" cy="40" r="3.6" fill="#EDB48C" stroke="#16213E" stroke-width="2"/>'
+      + '<ellipse cx="40" cy="38.5" rx="17.5" ry="19.5" fill="#EDB48C" stroke="#16213E" stroke-width="2.4"/>'
+      + '<path d="M22.5 34C21 14 59 14 57.5 34C53 25.5 27 25.5 22.5 34Z" fill="#2B1B17"/>'
+      + '<rect x="25" y="15.5" width="13.5" height="8.5" rx="3.4" fill="#16213E"/><rect x="41.5" y="15.5" width="13.5" height="8.5" rx="3.4" fill="#16213E"/><path d="M38.5 19.5H41.5" stroke="#16213E" stroke-width="2"/><path d="M28 18.2H33" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".6"/><path d="M44.5 18.2H49.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>'
+      + '<ellipse cx="33" cy="36" rx="4.2" ry="4.6" fill="#fff"/><circle cx="33" cy="36.6" r="2.1" fill="#16213E"/>' + eyeR + brows
+      + '<path d="M40 38.5Q37.5 44 40.5 45" fill="none" stroke="#C98A60" stroke-width="1.8" stroke-linecap="round"/>'
+      + '<path d="M29 50Q35 43.5 40 47Q45 43.5 51 50Q45.5 52 40 49.8Q34.5 52 29 50Z" fill="#2B1B17"/>' + mouth
+      + '<circle cx="40" cy="40" r="38" fill="none" stroke="#16213E" stroke-width="3"/></svg>';
+  };
+  const fill = t => String(t).replace(/\{prize\}/g, C.segments[C.winIndex]).replace(/\{brand\}/g, C.brand);
+  const L = C.guruLines;
+  document.querySelectorAll("[data-face]").forEach(n => { n.outerHTML = guruSVG(n.getAttribute("data-face")); });
+  document.querySelectorAll("[data-name]").forEach(n => { n.textContent = C.guruName; });
+  const say = (id, text) => {
+    const el = $(id), b = el.closest(".bubble");
+    el.textContent = fill(text);
+    b.classList.remove("swap"); void b.offsetWidth; b.classList.add("swap");
+  };
+  $("topMsg").textContent = fill(L.intro);
+  $("claimMsg").textContent = fill(L.claim);
+  $("doneMsg").textContent = fill(L.done);
 
   $("brandName").textContent = C.brand;
   $("brandName2").textContent = C.brand;
@@ -270,22 +370,30 @@ if (window.LP.pixelId) {
 
   const markWinner = () => { const w = document.getElementById("winSeg"); if (w) { w.setAttribute("stroke","#FFFFFF"); w.setAttribute("stroke-width","4"); w.parentNode.insertBefore(w, w.parentNode.querySelector("text")); } };
   const finalAngle = 360*6 - (C.winIndex*seg + seg/2) + (Math.random()*seg*0.5 - seg*0.25);
-  if (store.get("lp_lead")) { svg.style.transition="none"; svg.style.transform=`rotate(${finalAngle}deg)`; markWinner(); showDone(); }
+  if (store.get("lp_lead")) { $("doneMsg").textContent = fill(L.back); svg.style.transition="none"; svg.style.transform=`rotate(${finalAngle}deg)`; markWinner(); showDone(); }
   else if (store.get("lp_spun")) { svg.style.transition="none"; svg.style.transform=`rotate(${finalAngle}deg)`; markWinner(); showClaim(); }
 
   /* ---- spin (button, wheel or hub) ---- */
   const wrap = document.querySelector(".wheel-wrap");
   let spun = !!(store.get("lp_spun") || store.get("lp_lead"));
   if (!spun) wrap.classList.add("can-spin");
-  wrap.addEventListener("click", () => { if (!spun) $("spinBtn").click(); });
+  let impatient = 0;
+  wrap.addEventListener("click", () => {
+    if (!spun) { $("spinBtn").click(); return; }
+    if (!$("claim").classList.contains("show") && !$("done").classList.contains("show")) {
+      say("topMsg", L.impatient[Math.min(impatient++, L.impatient.length - 1)]);
+    }
+  });
   $("spinBtn").addEventListener("click", () => {
     if (spun) return;
     spun = true; wrap.classList.remove("can-spin");
     $("spinBtn").disabled = true;
+    say("topMsg", L.spinning);
     svg.style.transform = `rotate(${finalAngle}deg)`;
     svg.addEventListener("transitionend", () => {
       store.set("lp_spun","1");
       markWinner();
+      say("topMsg", L.won);
       if (window.fbq) fbq("trackCustom","WheelSpin");
       setTimeout(showClaim, 350);
     }, {once:true});
@@ -306,11 +414,11 @@ if (window.LP.pixelId) {
       $("phoneBox").classList.add("bad");
       $("hint").textContent = digits.length === 0
         ? "Escribe tu número de WhatsApp."
-        : "Revisa el número: debe tener 9 cifras y empezar por 6 o 7.";
+        : L.badPhone;
       phone.focus(); return;
     }
     if (!$("consent").checked) {
-      $("consentHint").textContent = "Marca la casilla para que podamos enviarte el premio.";
+      $("consentHint").textContent = L.noConsent;
       return;
     }
     $("claimBtn").disabled = true; $("claimBtn").textContent = "Reservando…";
@@ -321,7 +429,8 @@ if (window.LP.pixelId) {
       prize, brand: C.brand, consent: true,
       event_id: eventId, subid, ...track,
       fbp: cookie("_fbp"), fbc: cookie("_fbc") || (track.fbclid ? "fb.1." + Date.now() + "." + track.fbclid : ""),
-      page: location.href.split("?")[0], ts: new Date().toISOString()
+      page: location.href.split("?")[0], landing_url: location.href, referrer: document.referrer,
+      ts: new Date().toISOString()
     };
 
     if (C.webhookUrl) {
@@ -335,7 +444,7 @@ if (window.LP.pixelId) {
         if (r.status === 400) {
           // The server rejected the number: let the visitor fix it instead of losing the lead.
           $("phoneBox").classList.add("bad");
-          $("hint").textContent = "Revisa el número: debe tener 9 cifras y empezar por 6 o 7.";
+          $("hint").textContent = L.badPhone;
           $("claimBtn").disabled = false; $("claimBtn").textContent = "Reservar mi premio";
           phone.focus(); return;
         }
@@ -348,9 +457,9 @@ if (window.LP.pixelId) {
     showDone();
   });
 
-  /* ---- Telegram ---- */
-  $("tgBtn").addEventListener("click", () => {
-    if (window.fbq) fbq("trackCustom","TelegramClick");
+  /* ---- WhatsApp channel ---- */
+  $("channelBtn").addEventListener("click", () => {
+    if (window.fbq) fbq("trackCustom","ChannelClick");
     window.location.href = C.channelUrl;
   });
 })();
