@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gira la ruleta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+
+<script>
+/* Defaults. Railway env variables override these via /config.js */
+window.LP = {
+  brand: "Suerte Guru",
+  channelUrl: "https://t.me/YOUR_CHANNEL",
+  pixelId: "",
+  webhookUrl: "/api/lead",
+  countryPrefix: "+34",
+  phonePattern: /^[67]\d{8}$/,
+  phonePlaceholder: "612 345 678",
+  // Wheel segments, clockwise from the top. Use only prizes the channel really delivers.
+  segments: ["50 giros", "Pronóstico VIP", "Bono 100\u00a0%", "20 giros", "Bono 200\u00a0%", "Pronóstico del día", "100 giros", "Bono 150\u00a0%"],
+  winIndex: 4
+};
+</script>
+<script src="/config.js"></script>
+
+<style>
+:root{
+  --bg:#FFF6E8; --surface:#FFFFFF; --ink:#16213E; --muted:#5B6480;
+  --saffron:#F2A71B; --tomato:#E0412F; --navy:#16213E; --line:#E8DCC6;
+  --ok:#1E8A4C; --err:#C2271A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121A31; --surface:#1B2544; --ink:#FFF3E0; --muted:#B7BDD3; --line:#2C3860;
+    --ok:#4CC27E; --err:#FF7A6B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121A31; --surface:#1B2544; --ink:#FFF3E0; --muted:#B7BDD3; --line:#2C3860;
+  --ok:#4CC27E; --err:#FF7A6B; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+main{max-width:460px; margin:0 auto; padding:28px 20px 40px; text-align:center}
+.brand{font-weight:600; font-size:1rem; color:var(--muted); margin:0 0 18px}
+h1{font-size:clamp(2rem,8vw,2.6rem); line-height:1.02; font-weight:800; letter-spacing:-.02em; margin:0 0 10px}
+.lead{font-size:1.05rem; color:var(--muted); margin:0 auto 22px; max-width:32ch}
+
+/* Wheel */
+.wheel-wrap{position:relative; width:min(88vw,360px,max(200px,calc(100vh - 350px))); width:min(88vw,360px,max(200px,calc(100svh - 350px))); aspect-ratio:1; margin:34px auto 24px}
+.wheel-wrap::before{ /* rim */
+  content:""; position:absolute; inset:-10px; border-radius:50%;
+  background:repeating-conic-gradient(var(--saffron) 0 7.5deg, var(--navy) 7.5deg 15deg);
+}
+#wheel{position:relative; width:100%; height:100%; border-radius:50%; display:block;
+  transition:transform 5.2s cubic-bezier(.12,.72,.08,1); will-change:transform}
+.pointer{position:absolute; top:-22px; left:50%; transform:translateX(-50%); width:38px; height:48px; z-index:2;
+  filter:drop-shadow(0 3px 2px rgba(0,0,0,.25))}
+.hub{position:absolute; inset:50% auto auto 50%; width:22%; aspect-ratio:1; transform:translate(-50%,-50%);
+  border-radius:50%; background:var(--saffron); border:5px solid var(--navy); z-index:2;
+  display:grid; place-items:center; font-weight:800; color:var(--navy); font-size:.85rem}
+
+.btn{appearance:none; border:0; cursor:pointer; width:100%; max-width:340px; padding:17px 22px;
+  border-radius:14px; font:inherit; font-weight:800; font-size:clamp(1rem,4.6vw,1.15rem); line-height:1.2; letter-spacing:.01em;
+  background:var(--tomato); color:#fff; box-shadow:0 5px 0 #A52A1D; transition:transform .08s, box-shadow .08s}
+.btn:active{transform:translateY(4px); box-shadow:0 1px 0 #A52A1D}
+.btn:disabled{opacity:.6; cursor:default}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--saffron); outline-offset:3px}
+.btn.tg{background:#229ED9; box-shadow:0 5px 0 #17739F}
+.btn.tg:active{box-shadow:0 1px 0 #17739F}
+
+/* Sheet */
+.sheet{display:none; text-align:left; background:var(--surface); border:2px solid var(--line);
+  border-radius:20px; padding:22px 20px; margin-top:6px}
+.sheet.show{display:block; animation:pop .35s ease-out}
+.sheet{scroll-margin-top:calc(12px + env(safe-area-inset-top,0px))}
+.phone input::placeholder{color:var(--muted); opacity:.45}
+.wheel-wrap.can-spin{cursor:pointer}
+@keyframes pop{from{transform:scale(.96); opacity:0}to{transform:none; opacity:1}}
+.prize{display:block; font-size:1.9rem; font-weight:800; line-height:1.05; color:var(--tomato); margin:2px 0 6px}
+.sheet p{margin:0 0 16px; color:var(--muted)}
+label.field{display:block; font-weight:600; margin-bottom:8px}
+.phone{display:flex; border:2px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg)}
+.phone span{padding:14px 12px; font-weight:600; border-right:2px solid var(--line); color:var(--muted)}
+.phone input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:inherit; font-size:1.15rem; padding:14px 12px}
+.phone input:focus{outline:none}
+.phone:focus-within{border-color:var(--saffron)}
+.phone.bad{border-color:var(--err)}
+.hint{min-height:1.3em; font-size:.9rem; margin:6px 0 12px; color:var(--err)}
+.consent{display:flex; gap:10px; align-items:flex-start; font-size:.88rem; color:var(--muted); margin-bottom:18px}
+.consent input{width:20px; height:20px; margin:1px 0 0; accent-color:var(--tomato); flex:none}
+.sheet .btn{max-width:none}
+.done{text-align:center}
+.done .check{width:56px; height:56px; border-radius:50%; background:var(--ok); color:#fff; display:grid; place-items:center;
+  font-size:1.8rem; margin:0 auto 12px}
+.sheet .small{font-size:.85rem; color:var(--muted); margin:18px 0 0}
+.hint:empty{margin-bottom:6px}
+.consent-hint{margin:-8px 0 14px}
+
+footer{max-width:460px; margin:0 auto; padding:0 20px 28px; text-align:center; font-size:.78rem; color:var(--muted)}
+footer a{color:inherit}
+.age{display:inline-block; border:2px solid currentColor; border-radius:50%; width:30px; height:30px; line-height:26px; font-weight:800; margin-bottom:6px}
+
+@media (max-height:700px){
+  main{padding-top:14px}
+  .brand{margin-bottom:8px}
+  h1{font-size:clamp(1.7rem,7.5vw,2.2rem)}
+  .lead{font-size:.95rem; margin-bottom:10px}
+}
+@media (orientation:landscape) and (max-height:520px){
+  main{max-width:820px; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:32px; align-items:center; text-align:left}
+  main > *{grid-column:1}
+  .wheel-wrap{grid-column:2; grid-row:1 / span 6; width:min(360px,calc(100vh - 70px)); width:min(360px,calc(100svh - 70px)); margin:24px 10px}
+  .lead{margin-left:0}
+}
+@media (max-width:360px){
+  main{padding-left:14px; padding-right:14px}
+  .btn{font-size:1.02rem; padding:16px 12px}
+  .sheet{padding:18px 14px}
+  .prize{font-size:1.6rem}
+}
+@media (max-width:300px){
+  .btn{font-size:.94rem; padding:15px 10px}
+}
+@media (prefers-reduced-motion:reduce){
+  #wheel{transition-duration:1.2s}
+  .sheet.show{animation:none}
+}
+</style>
+
+<script>
+/* Meta Pixel (loads only if pixelId is set) */
+if (window.LP.pixelId) {
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', window.LP.pixelId);
+  fbq('track', 'PageView');
+}
+</script>
+</head>
+<body>
+<main>
+  <p class="brand" id="brandName"></p>
+  <h1>Gira la ruleta y llévate tu premio</h1>
+  <p class="lead">Un giro gratis por persona. Te enviamos el premio por WhatsApp y lo activas en nuestro canal de Telegram.</p>
+
+  <div class="wheel-wrap" aria-hidden="true">
+    <svg class="pointer" viewBox="0 0 38 48"><path d="M19 48 2 12A17 17 0 1 1 36 12Z" fill="#E0412F" stroke="#16213E" stroke-width="3"/><circle cx="19" cy="15" r="6" fill="#FFF6E8"/></svg>
+    <svg id="wheel" viewBox="-100 -100 200 200"></svg>
+    <div class="hub">GIRA</div>
+  </div>
+
+  <button class="btn" id="spinBtn" type="button">Girar la ruleta</button>
+
+  <!-- Step 2: claim -->
+  <section class="sheet" id="claim" aria-live="polite">
+    <span>¡Has ganado!</span>
+    <strong class="prize" id="prizeText"></strong>
+    <p>Escribe tu número de WhatsApp para reservar el premio. Después te llevamos al canal de Telegram para activarlo.</p>
+
+    <label class="field" for="phone">Tu número de WhatsApp</label>
+    <div class="phone" id="phoneBox">
+      <span id="prefix"></span>
+      <input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="12">
+    </div>
+    <div class="hint" id="hint" role="alert"></div>
+
+    <label class="consent">
+      <input type="checkbox" id="consent">
+      <span>Soy mayor de 18 años y acepto recibir mensajes con premios y promociones por WhatsApp. Puedo darme de baja cuando quiera.</span>
+    </label>
+    <div class="hint consent-hint" id="consentHint" role="alert"></div>
+
+    <button class="btn" id="claimBtn" type="button">Reservar mi premio</button>
+  </section>
+
+  <!-- Step 3: go to Telegram -->
+  <section class="sheet done" id="done" aria-live="polite">
+    <div class="check" aria-hidden="true">✓</div>
+    <strong class="prize" id="prizeText2"></strong>
+    <p>Premio reservado. Únete al canal de Telegram para activarlo y recibir los pronósticos diarios.</p>
+    <button class="btn tg" id="tgBtn" type="button">Abrir el canal de Telegram</button>
+    <p class="small">Si no se abre, busca <span id="brandName2"></span> en Telegram.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="age">18+</div><br>
+  Juega con responsabilidad. Más información en <a href="https://www.jugarbien.es" target="_blank" rel="noopener">jugarbien.es</a>.
+</footer>
+
+<script>
+(function(){
+  const C = window.LP;
+  const $ = id => document.getElementById(id);
+  const cookie = n => (document.cookie.match("(?:^|; )" + n + "=([^;]*)") || [])[1] || "";
+  const seg = 360 / C.segments.length;
+  const colors = ["#E0412F","#16213E","#F2A71B","#16213E"];
+  const textColors = ["#FFFFFF","#FFF3E0","#16213E","#FFF3E0"];
+
+  $("brandName").textContent = C.brand;
+  $("brandName2").textContent = C.brand;
+  $("prefix").textContent = C.countryPrefix;
+  $("phone").placeholder = C.phonePlaceholder;
+  const prize = C.segments[C.winIndex];
+  $("prizeText").textContent = prize;
+  $("prizeText2").textContent = prize;
+
+  /* ---- tracking params from the ad / Keitaro ---- */
+  const qs = new URLSearchParams(location.search);
+  const track = {};
+  ["subid","_subid","sub_id","clickid","fbclid","utm_source","utm_medium","utm_campaign","utm_content","utm_term"]
+    .forEach(k => { if (qs.get(k)) track[k] = qs.get(k); });
+  const subid = track.subid || track._subid || track.sub_id || track.clickid || "";
+
+  /* ---- draw wheel ---- */
+  const svg = $("wheel"), NS = "http://www.w3.org/2000/svg";
+  const labels = [];
+  const pt = (a, r) => [r*Math.cos((a-90)*Math.PI/180), r*Math.sin((a-90)*Math.PI/180)];
+  C.segments.forEach((label, i) => {
+    const a0 = i*seg, a1 = a0+seg, [x0,y0] = pt(a0,100), [x1,y1] = pt(a1,100);
+    const p = document.createElementNS(NS,"path");
+    p.setAttribute("d",`M0 0L${x0} ${y0}A100 100 0 0 1 ${x1} ${y1}Z`);
+    p.setAttribute("fill", colors[i % colors.length]);
+    p.setAttribute("stroke","#FFF6E8"); p.setAttribute("stroke-width","1.2");
+    if (i === C.winIndex) p.id = "winSeg";
+    svg.appendChild(p);
+    const t = document.createElementNS(NS,"text");
+    const mid = a0 + seg/2;
+    t.setAttribute("transform",`rotate(${mid}) translate(0 -62) rotate(90)`);
+    t.setAttribute("text-anchor","middle"); t.setAttribute("dominant-baseline","middle");
+    t.setAttribute("fill", textColors[i % textColors.length]);
+    t.setAttribute("font-size", "11");
+    t.setAttribute("font-weight","800");
+    t.setAttribute("font-family","Bricolage Grotesque, system-ui, sans-serif");
+    t.textContent = label;
+    svg.appendChild(t);
+    labels.push(t);
+  });
+  // Shrink any label that would run into the hub or the rim (space from r=28 to r=94).
+  const fitLabels = () => labels.forEach(t => {
+    let fs = 11;
+    t.setAttribute("font-size", fs);
+    while (fs > 6.5 && t.getComputedTextLength() > 64) { fs -= .5; t.setAttribute("font-size", fs); }
+  });
+  fitLabels();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLabels);
+
+  /* ---- remember returning visitors ---- */
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+  };
+  const showClaim = () => { $("spinBtn").style.display="none"; $("claim").classList.add("show"); $("claim").scrollIntoView({behavior:"smooth",block:"start"}); };
+  const showDone  = () => { $("spinBtn").style.display="none"; $("claim").classList.remove("show"); $("done").classList.add("show"); $("done").scrollIntoView({behavior:"smooth",block:"start"}); };
+
+  const markWinner = () => { const w = document.getElementById("winSeg"); if (w) { w.setAttribute("stroke","#FFFFFF"); w.setAttribute("stroke-width","4"); w.parentNode.insertBefore(w, w.parentNode.querySelector("text")); } };
+  const finalAngle = 360*6 - (C.winIndex*seg + seg/2) + (Math.random()*seg*0.5 - seg*0.25);
+  if (store.get("lp_lead")) { svg.style.transition="none"; svg.style.transform=`rotate(${finalAngle}deg)`; markWinner(); showDone(); }
+  else if (store.get("lp_spun")) { svg.style.transition="none"; svg.style.transform=`rotate(${finalAngle}deg)`; markWinner(); showClaim(); }
+
+  /* ---- spin (button, wheel or hub) ---- */
+  const wrap = document.querySelector(".wheel-wrap");
+  let spun = !!(store.get("lp_spun") || store.get("lp_lead"));
+  if (!spun) wrap.classList.add("can-spin");
+  wrap.addEventListener("click", () => { if (!spun) $("spinBtn").click(); });
+  $("spinBtn").addEventListener("click", () => {
+    if (spun) return;
+    spun = true; wrap.classList.remove("can-spin");
+    $("spinBtn").disabled = true;
+    svg.style.transform = `rotate(${finalAngle}deg)`;
+    svg.addEventListener("transitionend", () => {
+      store.set("lp_spun","1");
+      markWinner();
+      if (window.fbq) fbq("trackCustom","WheelSpin");
+      setTimeout(showClaim, 350);
+    }, {once:true});
+  });
+
+  /* ---- phone input ---- */
+  const phone = $("phone");
+  phone.addEventListener("input", () => {
+    phone.value = phone.value.replace(/[^\d ]/g,"");
+    $("phoneBox").classList.remove("bad"); $("hint").textContent = "";
+  });
+  $("consent").addEventListener("change", () => { $("consentHint").textContent = ""; });
+
+  /* ---- claim ---- */
+  $("claimBtn").addEventListener("click", async () => {
+    const digits = phone.value.replace(/\D/g,"").replace(/^34/,"");
+    if (!C.phonePattern.test(digits)) {
+      $("phoneBox").classList.add("bad");
+      $("hint").textContent = digits.length === 0
+        ? "Escribe tu número de WhatsApp."
+        : "Revisa el número: debe tener 9 cifras y empezar por 6 o 7.";
+      phone.focus(); return;
+    }
+    if (!$("consent").checked) {
+      $("consentHint").textContent = "Marca la casilla para que podamos enviarte el premio.";
+      return;
+    }
+    $("claimBtn").disabled = true; $("claimBtn").textContent = "Reservando…";
+
+    const eventId = "lead_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    const lead = {
+      phone: C.countryPrefix + digits,
+      prize, brand: C.brand, consent: true,
+      event_id: eventId, subid, ...track,
+      fbp: cookie("_fbp"), fbc: cookie("_fbc") || (track.fbclid ? "fb.1." + Date.now() + "." + track.fbclid : ""),
+      page: location.href.split("?")[0], ts: new Date().toISOString()
+    };
+
+    if (C.webhookUrl) {
+      const ctrl = window.AbortController ? new AbortController() : null;
+      const timer = ctrl && setTimeout(() => ctrl.abort(), 8000);
+      try {
+        const r = await fetch(C.webhookUrl, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(lead), keepalive:true, signal: ctrl && ctrl.signal
+        });
+        if (r.status === 400) {
+          // The server rejected the number: let the visitor fix it instead of losing the lead.
+          $("phoneBox").classList.add("bad");
+          $("hint").textContent = "Revisa el número: debe tener 9 cifras y empezar por 6 o 7.";
+          $("claimBtn").disabled = false; $("claimBtn").textContent = "Reservar mi premio";
+          phone.focus(); return;
+        }
+      } catch(e) { console.warn("Lead request failed", e); }
+      finally { if (timer) clearTimeout(timer); }
+    }
+    if (window.fbq) fbq("track","Lead",{content_name:prize},{eventID:eventId});
+
+    store.set("lp_lead","1");
+    showDone();
+  });
+
+  /* ---- Telegram ---- */
+  $("tgBtn").addEventListener("click", () => {
+    if (window.fbq) fbq("trackCustom","TelegramClick");
+    window.location.href = C.channelUrl;
+  });
+})();
+</script>
+</body>
+</html>
